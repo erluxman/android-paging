@@ -27,8 +27,8 @@ import com.example.android.codelabs.paging.model.RepoSearchResult
  * Repository class that works with local and remote data sources.
  */
 class GithubRepository(
-    private val service: GithubService,
-    private val cache: GithubLocalCache
+        private val service: GithubService,
+        private val cache: GithubLocalCache
 ) {
 
     // keep the last requested page. When the request is successful, increment the page number.

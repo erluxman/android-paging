@@ -39,8 +39,8 @@ class SearchRepositoriesViewModel(private val repository: GithubRepository) : Vi
         repository.search(it)
     }
 
-    val repos: LiveData<List<Repo>> = Transformations.switchMap(repoResult) { it -> it.data }
-    val networkErrors: LiveData<String> = Transformations.switchMap(repoResult) { it ->
+    val repos: LiveData<List<Repo>> = Transformations.switchMap(repoResult) { it.data }
+    val networkErrors: LiveData<String> = Transformations.switchMap(repoResult) {
         it.networkErrors
     }
 
@@ -51,6 +51,7 @@ class SearchRepositoriesViewModel(private val repository: GithubRepository) : Vi
         queryLiveData.postValue(queryString)
     }
 
+    //This is equivalent to paging.
     fun listScrolled(visibleItemCount: Int, lastVisibleItemPosition: Int, totalItemCount: Int) {
         if (visibleItemCount + lastVisibleItemPosition + VISIBLE_THRESHOLD >= totalItemCount) {
             val immutableQuery = lastQueryValue()
