@@ -1,12 +1,12 @@
 package com.example.android.codelabs.paging.data
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.paging.PagedList
 import com.example.android.codelabs.paging.api.GithubService
 import com.example.android.codelabs.paging.api.searchRepos
 import com.example.android.codelabs.paging.db.GithubLocalCache
 import com.example.android.codelabs.paging.model.Repo
+import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
 
 class RepoBoundaryCallbacks(
         private val query: String,
@@ -17,8 +17,8 @@ class RepoBoundaryCallbacks(
     private var lastRequestedPage = 1
 
     // LiveData of network errors.
-    private val _networkErrors = MutableLiveData<String>()
-    val networkErrors: LiveData<String>
+    private val _networkErrors = PublishSubject.create<String>()
+    val networkErrors: Observable<String>
         get() = _networkErrors
 
     // avoid triggering multiple requests in the same time
@@ -42,7 +42,7 @@ class RepoBoundaryCallbacks(
                 isRequestInProgress = false
             }
         }, { error ->
-            _networkErrors.postValue(error)
+            _networkErrors.onNext(error)
             isRequestInProgress = false
         })
     }

@@ -17,25 +17,23 @@
 package com.example.android.codelabs.paging.ui
 
 import android.os.Bundle
-import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
-import androidx.paging.PagedList
 import androidx.recyclerview.widget.DividerItemDecoration
 import com.example.android.codelabs.paging.Injection
 import com.example.android.codelabs.paging.R
-import com.example.android.codelabs.paging.model.Repo
+import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.activity_search_repositories.*
 
 class SearchRepositoriesActivity : AppCompatActivity() {
 
     private lateinit var viewModel: SearchRepositoriesViewModel
     private val adapter = ReposAdapter()
+    private val disposable = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,17 +55,19 @@ class SearchRepositoriesActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putString(LAST_SEARCH_QUERY, viewModel.lastQueryValue())
+        disposable.add(viewModel.lastQueryValue().subscribe {
+            outState.putString(LAST_SEARCH_QUERY, it)
+        })
     }
 
     private fun initAdapter() {
         list.adapter = adapter
-        viewModel.repos.observe(this, Observer<PagedList<Repo>> {
-            Log.d("Activity", "list: ${it?.size}")
-            showEmptyList(it?.size == 0)
+
+        disposable.add(viewModel.repos.subscribe {
+            showEmptyList(it.size == 0)
             adapter.submitList(it)
         })
-        viewModel.networkErrors.observe(this, Observer<String> {
+        disposable.add(viewModel.networkErrors.subscribe {
             Toast.makeText(this, "\uD83D\uDE28 Wooops $it", Toast.LENGTH_LONG).show()
         })
     }
@@ -116,5 +116,10 @@ class SearchRepositoriesActivity : AppCompatActivity() {
     companion object {
         private const val LAST_SEARCH_QUERY: String = "last_search_query"
         private const val DEFAULT_QUERY = "Android"
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        disposable.dispose()
     }
 }

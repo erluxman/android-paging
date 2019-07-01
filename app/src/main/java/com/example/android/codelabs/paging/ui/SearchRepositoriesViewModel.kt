@@ -16,14 +16,13 @@
 
 package com.example.android.codelabs.paging.ui
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
 import androidx.paging.PagedList
 import com.example.android.codelabs.paging.data.GithubRepository
 import com.example.android.codelabs.paging.model.Repo
 import com.example.android.codelabs.paging.model.RepoSearchResult
+import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
 
 /**
  * ViewModel for the [SearchRepositoriesActivity] screen.
@@ -31,29 +30,21 @@ import com.example.android.codelabs.paging.model.RepoSearchResult
  */
 class SearchRepositoriesViewModel(private val repository: GithubRepository) : ViewModel() {
 
-    companion object {
-        private const val VISIBLE_THRESHOLD = 5
-    }
+    private val queryObservable = PublishSubject.create<String>()
+    private val repoResult: Observable<RepoSearchResult> = queryObservable.map { repository.search(it) }
 
-    private val queryLiveData = MutableLiveData<String>()
-    private val repoResult: LiveData<RepoSearchResult> = Transformations.map(queryLiveData) {
-        repository.search(it)
-    }
-
-    val repos: LiveData<PagedList<Repo>> = Transformations.switchMap(repoResult) { it.data }
-    val networkErrors: LiveData<String> = Transformations.switchMap(repoResult) {
-        it.networkErrors
-    }
+    val repos: Observable<PagedList<Repo>> = repoResult.flatMap { it.data }
+    val networkErrors: Observable<String> = repoResult.flatMap { it.networkErrors }
 
     /**
      * Search a repository based on a query string.
      */
     fun searchRepo(queryString: String) {
-        queryLiveData.postValue(queryString)
+        queryObservable.onNext(queryString)
     }
 
     /**
      * Get the last query value.
      */
-    fun lastQueryValue(): String? = queryLiveData.value
+    fun lastQueryValue(): Observable<String> = queryObservable
 }
